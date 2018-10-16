@@ -4,14 +4,17 @@ import (
 	"flag"
 	"fmt"
 	"github.com/guonaihong/wav"
+	"io"
 	"os"
 )
 
 func main() {
 
-	sampleRate := flag.Int("ar", "", "Audio sample rate")
+	sampleRate := flag.Int("ar", 0, "Audio sample rate")
 	file := flag.String("f", "", "Pcm audio file name")
 	wavFile := flag.String("w", "", "The name of the wav file to be created")
+
+	flag.Parse()
 
 	pcmFile, err := os.Open(*file)
 	if err != nil {
@@ -26,7 +29,7 @@ func main() {
 		return
 	}
 
-	wav := wavHead.New(1, *sampleRate, 16, pcmFi.Size())
+	wavHead := wav.New(uint16(1), uint32(*sampleRate), uint16(16), uint32(pcmFi.Size()))
 
 	wavFd, err := os.Create(*wavFile)
 	if err != nil {
@@ -35,12 +38,12 @@ func main() {
 	}
 	defer wavFd.Close()
 
-	head, err := wav.Marshal()
+	head, err := wavHead.Marshal()
 	if err != nil {
 		fmt.Printf("%s\n", err)
 		return
 	}
 
 	wavFd.Write(head)
-	io.Copy(wavFd)
+	io.Copy(wavFd, pcmFile)
 }

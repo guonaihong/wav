@@ -1,6 +1,7 @@
 package wav
 
 import (
+	"bytes"
 	"encoding/binary"
 )
 
@@ -32,28 +33,34 @@ type WavHead struct {
 	Data
 }
 
-func New(numChannels uint16, sampleRate uint32, bitsPerSample uint16, wavLen int) *WavHead {
-	return &WavHead{
+func New(numChannels uint16, sampleRate uint32, bitsPerSample uint16, wavLen uint32) *WavHead {
+	head := &WavHead{
 		Head: Head{
-			ChunkID:   []byte("RIFF"),
-			ChunkSize: 36 + wavLen,
-			Format:    []byte("WAVE"),
+			//ChunkID:   []byte("RIFF"),
+			ChunkSize: uint32(36 + wavLen),
+			//Format:    []byte("WAVE"),
 		},
 		Fmt: Fmt{
-			Subchunk1ID:   []byte("fmt "),
+			//Subchunk1ID:   []byte("fmt "),
 			Subchunk1Size: 16,
 			AudioFormat:   1,
-			NumChannels:   channels,
+			NumChannels:   numChannels,
 			SampleRate:    sampleRate,
-			ByteRate:      sampleRate * numChannels * bitsPerSample / 8,
+			ByteRate:      sampleRate * uint32(numChannels) * uint32(bitsPerSample) / 8,
 			BlockAlign:    numChannels * bitsPerSample / 8,
 			BitsPerSample: bitsPerSample,
 		},
 		Data: Data{
-			Subchunk2ID:   []byte("data"),
-			Subchunk2Size: wavLen,
+			//Subchunk2ID:   []byte("data"),
+			Subchunk2Size: uint32(wavLen),
 		},
 	}
+
+	copy(head.ChunkID[:], "RIFF")
+	copy(head.Format[:], "WAVE")
+	copy(head.Subchunk1ID[:], "fmt ")
+	copy(head.Subchunk2ID[:], "data")
+	return head
 }
 
 func (wh *WavHead) Marshal() ([]byte, error) {
